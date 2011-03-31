@@ -3124,6 +3124,9 @@ Low Level (hardware related) configuration options:
 		be used if available. These functions may be faster under some
 		conditions but may increase the binary size.
 
+- CONFIG_SYS_NAND_NO_SUBPAGE
+		Some drivers (davinci) do not support access to NAND subpage.
+
 Building the Software:
 ======================
 

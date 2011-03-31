@@ -193,7 +193,8 @@ typedef enum {
 					&& (chip->page_shift > 9))
 
 /* Mask to zero out the chip options, which come from the id table */
-#define NAND_CHIPOPTIONS_MSK	(0x0000ffff & ~NAND_NO_AUTOINCR)
+#define NAND_CHIPOPTIONS_MSK	(0x0000ffff & ~NAND_NO_AUTOINCR & \
+				~NAND_NO_SUBPAGE_WRITE)
 
 /* Non chip related options */
 /* Use a flash based bad block table. This option is passed to the
