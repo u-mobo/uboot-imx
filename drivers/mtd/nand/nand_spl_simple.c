@@ -199,8 +199,13 @@ static int nand_read_page(int block, int page, void *dst)
 
 	/* No malloc available for now, just use some temporary locations
 	 * in SDRAM
+	 * Please provide some safe value for CONFIG_SPL_NAND_WORKSPACE in
+	 * your board configuration, this is just a guess!!
 	 */
-	ecc_calc = (u_char *)(CONFIG_SYS_SDRAM_BASE + 0x10000);
+#ifndef CONFIG_SPL_NAND_WORKSPACE
+#define CONFIG_SPL_NAND_WORKSPACE	(CONFIG_SYS_SDRAM_BASE + 0x10000)
+#endif
+	ecc_calc = (u_char *)CONFIG_SPL_NAND_WORKSPACE;
 	ecc_code = ecc_calc + 0x100;
 	oob_data = ecc_calc + 0x200;
 
