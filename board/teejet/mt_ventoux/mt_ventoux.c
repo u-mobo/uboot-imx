@@ -21,19 +21,24 @@
 
 #include <common.h>
 #include <netdev.h>
+#include <malloc.h>
 #include <fpga.h>
+#include <video_fb.h>
 #include <asm/io.h>
 #include <asm/arch/mem.h>
 #include <asm/arch/mux.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/omap_gpio.h>
 #include <asm/arch/mmc_host_def.h>
+#include <asm/arch/dss.h>
 #include <i2c.h>
 #include <spartan3.h>
 #include <asm/gpio.h>
 #include "mt_ventoux.h"
 
 DECLARE_GLOBAL_DATA_PTR;
+
+static GraphicDevice panel;
 
 #if defined(CONFIG_FPGA)
 
@@ -43,6 +48,20 @@ DECLARE_GLOBAL_DATA_PTR;
 #define FPGA_DIN	118
 #define FPGA_INIT	119
 #define FPGA_DONE	154
+
+#define XRES	480
+#define YRES	272
+
+static const struct panel_config lcd_cfg = {
+       .timing_h       = 0x01101d1b, /* Horizontal timing */
+       .timing_v       = 0x01400b02, /* Vertical timing */
+       .pol_freq       = 0x00023000, /* Pol Freq */
+       .divisor        = 0x0001000d, /* 33Mhz Pixel Clock */
+       .lcd_size       = ((YRES -1) << 16 | (XRES -1)),
+       .panel_type     = 0x01, /* TFT */
+       .data_lines     = 0x03, /* 24 Bit RGB */
+       .load_mode      = 0x02 /* Frame Mode */
+};
 
 /* Timing definitions for FPGA */
 static const u32 gpmc_fpga[] = {
@@ -232,4 +251,40 @@ int board_mmc_init(bd_t *bis)
 {
 	return omap_mmc_init(0);
 }
+
+void *video_hw_init(void)
+{
+
+	void *fb;
+	u32 size;
+
+#if 0
+	size = XRES * YRES * lcd_cfg.data_lines;
+	fb = malloc(size);
+	if (!fb) {
+		printf("Frame buffer not allocated\n");
+		return NULL;
+	}
+
+	panel.winSizeX = XRES;
+	panel.winSizeY = YRES;
+	panel.plnSizeX = XRES;
+	panel.plnSizeY = YRES;
+
+	panel.frameAdrs = fb;
+	panel.memSize = size;
+
+	panel.gdfBytesPP = 2;
+	panel.gdfIndex = GDF_16BIT_565RGB;
+
+	omap3_dss_panel_config(&lcd_cfg);
+	omap3_dss_setfb(fb);
+	omap3_dss_enable();
+
+	return &panel;
+#else
+	return NULL;
+#endif
+}
+
 #endif
