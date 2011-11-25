@@ -129,3 +129,13 @@ void omap3_dss_enable(void)
 	l |= DISPC_ENABLE;
 	writel(l, &dispc->control);
 }
+
+void omap3_dss_setfb(void *addr)
+{
+	struct dispc_regs *dispc = (struct dispc_regs *) OMAP3_DISPC_BASE;
+
+	writel((u32)addr, &dispc->gfx_base[0]);
+	writel((u32)addr, &dispc->gfx_base[1]);
+}
+
+

@@ -60,6 +60,10 @@ struct dispc_regs {
 	u32 global_alpha;			/* 0x74 */
 	u32 size_dig;				/* 0x78 */
 	u32 size_lcd;				/* 0x7C */
+	u32 gfx_base[2];
+	u32 gfx_position;
+	u32 gfx_size;
+	
 };
 
 /* VENC Registers */
