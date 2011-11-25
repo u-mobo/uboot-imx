@@ -21,13 +21,16 @@
 
 #include <common.h>
 #include <netdev.h>
+#include <malloc.h>
 #include <fpga.h>
+#include <video_fb.h>
 #include <asm/io.h>
 #include <asm/arch/mem.h>
 #include <asm/arch/mux.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/omap_gpio.h>
 #include <asm/arch/mmc_host_def.h>
+#include <asm/arch/dss.h>
 #include <i2c.h>
 #include <spartan3.h>
 #include <asm/gpio.h>
@@ -45,6 +48,28 @@ DECLARE_GLOBAL_DATA_PTR;
 #define FPGA_DIN	118
 #define FPGA_INIT	119
 #define FPGA_DONE	154
+
+#define LCD_PWR		138
+#define LCD_PON_PIN	139
+#define XRES	480
+#define YRES	272
+
+static const struct panel_config lcd_cfg = {
+
+	.timing_h       =  ((4 /* hpb */ - 1) << 20) |
+			((8 /*hfp */- 1) << 8) |
+			(41 /* hsw */ - 1), /* Horizontal timing */
+	.timing_v       = (2 /*vbp */ << 24) |
+			(4 /* vfp */ << 8) | 
+			(10 - 1), /* Vertical timing */
+	.pol_freq       = 0x00000000, /* Pol Freq */
+	.divisor        = 0x0001000d, /* 33Mhz Pixel Clock */
+	.lcd_size       = ((YRES - 1) << 16 | (XRES - 1)),
+	.panel_type     = 0x01, /* TFT */
+	.data_lines     = 0x03, /* 24 Bit RGB */
+	.load_mode      = 0x02, /* Frame Mode */
+	.panel_color	= 0,
+};
 
 /* Timing definitions for FPGA */
 static const u32 gpmc_fpga[] = {
@@ -206,5 +231,51 @@ int board_eth_init(bd_t *bis)
 int board_mmc_init(bd_t *bis)
 {
 	return omap_mmc_init(0);
+}
+#endif
+
+#if defined(CONFIG_VIDEO) && !defined(CONFIG_SPL_BUILD)
+static GraphicDevice panel;
+
+void *video_hw_init(void)
+{
+
+	void *fb;
+	u32 size;
+
+	panel.gdfBytesPP = 4;
+	panel.gdfIndex = GDF_32BIT_X888RGB;
+	size = XRES * YRES * panel.gdfBytesPP * 2 + 1024;
+#if 0
+	fb = malloc(size);
+	if (!fb) {
+		printf("Frame buffer not allocated\n");
+		return NULL;
+	}
+	fb = ALIGN((unsigned long)fb, 1024);
+#else
+	fb = (void *)0x80500000;
+#endif
+
+	printf("Frame buffer address 0x%p\n", fb);
+ 
+	gpio_request(LCD_PWR, "LCD Power");
+	gpio_request(LCD_PON_PIN, "LCD Pon");
+	gpio_direction_output(LCD_PWR, 0);
+	gpio_direction_output(LCD_PON_PIN, 1);
+
+	panel.winSizeX = XRES;
+	panel.winSizeY = YRES;
+	panel.plnSizeX = XRES;
+	panel.plnSizeY = YRES;
+
+	panel.frameAdrs = (u32)fb;
+	panel.memSize = size;
+
+	omap3_dss_panel_config(&lcd_cfg);
+	omap3_dss_setfb(fb);
+	omap3_dss_enable();
+
+	return (void*)&panel;
 }
 #endif
