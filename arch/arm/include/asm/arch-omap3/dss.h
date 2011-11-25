@@ -60,6 +60,18 @@ struct dispc_regs {
 	u32 global_alpha;			/* 0x74 */
 	u32 size_dig;				/* 0x78 */
 	u32 size_lcd;				/* 0x7C */
+	u32 gfx_base[2];
+	u32 gfx_position;			/* 0x88 */
+	u32 gfx_size;				/* 0x8C */
+	u32 reserved_3[4];			/* 0x90 */
+	u32 gfx_attributes;			/* 0xA0 */
+	u32 gfx_fifo_threshold;			/* 0xA4 */
+	u32 gfx_fifo_size_status;		/* 0xA8 */
+	u32 gfx_row_inc;			/* 0xAC */
+	u32 gfx_pixel_inc;			/* 0xB0 */
+	u32 gfx_window_skip;			/* 0xB4 */
+	u32 gfx_table_ba;			/* 0xB8 */
+	
 };
 
 /* VENC Registers */
@@ -120,6 +132,7 @@ struct venc_regs {
 
 /* Few Register Offsets */
 #define FRAME_MODE_SHIFT			1
+#define FUNC_GATED_SHIFT			9
 #define TFTSTN_SHIFT				3
 #define DATALINES_SHIFT				8
 
@@ -132,13 +145,18 @@ struct venc_regs {
 #define GP_OUT1					(1 << 16)
 
 #define DISPC_ENABLE				(LCD_ENABLE | \
-						 DIG_ENABLE | \
+		/*				 DIG_ENABLE | */\ 
 						 GO_LCD | \
-						 GO_DIG | \
+		/*				 GO_DIG | */ \
 						 GP_OUT0| \
 						 GP_OUT1)
 
-/* Configure VENC DSS Params */
+#define DISPC_PCK_FREE_ENABLE			(1 << 27)
+
+/* Register DSS_CONTROL */
+#define DISPC_CLK_SWITCH			(1 << 0)
+#define DSI_CLK_SWITCH				(1 << 1)
+#define VENC_CLOCK_MODE				(1 << 2)
 #define VENC_CLK_ENABLE				(1 << 3)
 #define DAC_DEMEN				(1 << 4)
 #define DAC_POWERDN				(1 << 5)
@@ -148,6 +166,7 @@ struct venc_regs {
 						 DAC_DEMEN | \
 						 DAC_POWERDN | \
 						 VENC_OUT_SEL)
+
 /*
  * Panel Configuration
  */
@@ -170,5 +189,6 @@ void omap3_dss_venc_config(const struct venc_regs *venc_cfg,
 			u32 height, u32 width);
 void omap3_dss_panel_config(const struct panel_config *panel_cfg);
 void omap3_dss_enable(void);
+void omap3_dss_setfb(void *addr);
 
 #endif /* DSS_H */

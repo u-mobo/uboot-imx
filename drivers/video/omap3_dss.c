@@ -28,6 +28,8 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/arch/dss.h>
+#include <asm/arch/clocks.h>
+#include <asm/arch/clocks_omap3.h>
 
 /*
  * Configure VENC for a given Mode (NTSC / PAL)
@@ -105,16 +107,41 @@ void omap3_dss_venc_config(const struct venc_regs *venc_cfg,
 void omap3_dss_panel_config(const struct panel_config *panel_cfg)
 {
 	struct dispc_regs *dispc = (struct dispc_regs *) OMAP3_DISPC_BASE;
+	struct dss_regs *dss = (struct dss_regs *) OMAP3_DSS_BASE;
 
 	writel(panel_cfg->timing_h, &dispc->timing_h);
 	writel(panel_cfg->timing_v, &dispc->timing_v);
 	writel(panel_cfg->pol_freq, &dispc->pol_freq);
 	writel(panel_cfg->divisor, &dispc->divisor);
 	writel(panel_cfg->lcd_size, &dispc->size_lcd);
-	writel((panel_cfg->load_mode << FRAME_MODE_SHIFT), &dispc->config);
+	writel((panel_cfg->load_mode << FRAME_MODE_SHIFT) | 1 << FUNC_GATED_SHIFT, &dispc->config);
 	writel(((panel_cfg->panel_type << TFTSTN_SHIFT) |
 		(panel_cfg->data_lines << DATALINES_SHIFT)), &dispc->control);
 	writel(panel_cfg->panel_color, &dispc->default_color0);
+
+	writel(panel_cfg->lcd_size, &dispc->gfx_size);
+	writel(0x91, &dispc->gfx_attributes);
+	writel(0x01, &dispc->gfx_row_inc);
+	writel(0x01, &dispc->gfx_pixel_inc);
+	writel(0x00, &dispc->gfx_window_skip);
+
+	writel(VENC_CLK_ENABLE | DAC_DEMEN,
+		&dss->control);
+
+}
+
+void omap3_dss_clock_enable(int enable)
+{
+	struct prcm *prcm_base = (struct prcm *)PRCM_BASE;
+
+	if (enable) {
+		setbits_le32(&prcm_base->fclken_dss, FCK_DSS_ON);
+		setbits_le32(&prcm_base->iclken_dss, ICK_DSS_ON);
+	} else {
+		clrbits_le32(&prcm_base->fclken_dss, FCK_DSS_ON);
+		clrbits_le32(&prcm_base->iclken_dss, ICK_DSS_ON);
+	}
+
 }
 
 /*
@@ -128,4 +155,13 @@ void omap3_dss_enable(void)
 	l = readl(&dispc->control);
 	l |= DISPC_ENABLE;
 	writel(l, &dispc->control);
+}
+
+void omap3_dss_setfb(void *addr)
+{
+	struct dispc_regs *dispc = (struct dispc_regs *) OMAP3_DISPC_BASE;
+
+	writel((u32)addr, &dispc->gfx_base[0]);
+	writel((u32)addr, &dispc->gfx_base[1]);
+
 }
