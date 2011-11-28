@@ -174,5 +174,6 @@ void omap3_dss_venc_config(const struct venc_regs *venc_cfg,
 			u32 height, u32 width);
 void omap3_dss_panel_config(const struct panel_config *panel_cfg);
 void omap3_dss_enable(void);
+void omap3_dss_setfb(void *addr);
 
 #endif /* DSS_H */
