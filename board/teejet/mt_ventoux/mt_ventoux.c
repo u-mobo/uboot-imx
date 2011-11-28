@@ -258,7 +258,7 @@ void *video_hw_init(void)
 	void *fb;
 	u32 size;
 
-#if 0
+#if 1
 	size = XRES * YRES * lcd_cfg.data_lines;
 	fb = malloc(size);
 	if (!fb) {
@@ -266,22 +266,25 @@ void *video_hw_init(void)
 		return NULL;
 	}
 
+	printf("Frame buffer addres 0x%08p\n", fb);
+ 
 	panel.winSizeX = XRES;
 	panel.winSizeY = YRES;
 	panel.plnSizeX = XRES;
 	panel.plnSizeY = YRES;
 
-	panel.frameAdrs = fb;
+	panel.frameAdrs = (u32)fb;
 	panel.memSize = size;
 
 	panel.gdfBytesPP = 2;
 	panel.gdfIndex = GDF_16BIT_565RGB;
 
 	omap3_dss_panel_config(&lcd_cfg);
-	omap3_dss_setfb(fb);
 	omap3_dss_enable();
+	omap3_dss_setfb(fb);
 
-	return &panel;
+	printf("OMAP DSS set\n", fb);
+	return (void*)&panel;
 #else
 	return NULL;
 #endif
