@@ -107,6 +107,7 @@ void omap3_dss_venc_config(const struct venc_regs *venc_cfg,
 void omap3_dss_panel_config(const struct panel_config *panel_cfg)
 {
 	struct dispc_regs *dispc = (struct dispc_regs *) OMAP3_DISPC_BASE;
+	struct dss_regs *dss = (struct dss_regs *) OMAP3_DSS_BASE;
 
 	writel(panel_cfg->timing_h, &dispc->timing_h);
 	writel(panel_cfg->timing_v, &dispc->timing_v);
@@ -119,14 +120,14 @@ void omap3_dss_panel_config(const struct panel_config *panel_cfg)
 	writel(panel_cfg->panel_color, &dispc->default_color0);
 
 	writel(panel_cfg->lcd_size, &dispc->gfx_size);
-	writel(0x0D, &dispc->gfx_attributes);
+	writel(0x91, &dispc->gfx_attributes);
 	writel(0x01, &dispc->gfx_row_inc);
 	writel(0x01, &dispc->gfx_pixel_inc);
 	writel(0x00, &dispc->gfx_window_skip);
 
-#if 0
-	writel(0x00fc00c0, &dispc->gfx_fifo_threshold);
-#endif
+	writel(VENC_CLK_ENABLE | DAC_DEMEN,
+		&dss->control);
+
 }
 
 void omap3_dss_clock_enable(int enable)
@@ -143,17 +144,6 @@ void omap3_dss_clock_enable(int enable)
 
 }
 
-void omap3_dss_pck_free_enable(int enable)
-{
-	struct dispc_regs *dispc = (struct dispc_regs *) OMAP3_DISPC_BASE;
-	u32 l = 0;
-
-	if (enable)
-		setbits_le32(&dispc->control, DISPC_PCK_FREE_ENABLE);
-	else
-		clrbits_le32(&dispc->control, DISPC_PCK_FREE_ENABLE);
-}
-
 /*
  * Enable LCD and DIGITAL OUT in DSS
  */
@@ -164,7 +154,6 @@ void omap3_dss_enable(void)
 
 	l = readl(&dispc->control);
 	l |= DISPC_ENABLE;
-	printf("enabling DISP 0x%x\n", l);
 	writel(l, &dispc->control);
 }
 
@@ -174,62 +163,5 @@ void omap3_dss_setfb(void *addr)
 
 	writel((u32)addr, &dispc->gfx_base[0]);
 	writel((u32)addr, &dispc->gfx_base[1]);
-
-}
-
-void omap3_dss_pll(u32 cfg1, u32 cfg2)
-{
-	u32 val;
-	struct dsi_pll *dsipll = (struct dsi_pll *)CM_DSI_PLL;
-
-	/* Setting PLL in manual mode */
-	omap3_dss_clock_enable(0);
-	udelay(1000);
-	omap3_dss_clock_enable(1);
-
-	omap3_dss_pck_free_enable(1);
-
-	val = 1000;
-
-	while (--val) {
-		if (readl(&dsipll->dsi_pll_status) & 0x1)
-			break;
-		udelay(1000);
-	}
-	omap3_dss_pck_free_enable(0);
-
-	clrbits_le32(&dsipll->dsi_pll_control, PLL_STOP);
-	writel(cfg1, &dsipll->dsi_pll_config1);
-
-	val = 0x10200E;
-
-	writel(val, &dsipll->dsi_pll_config2);
-
-	writel(1, &dsipll->dsi_pll_go);
-
-	val = 1000;
-
-	while (--val) {
-		if (!readl(&dsipll->dsi_pll_go) & 0x01)
-			break;
-		udelay(1000);
-	}
-
-	if (!val)
-		puts("dsi pll go bit not going down.\n");
-
-	val = 1000;
-
-	while (--val) {
-		if (readl(&dsipll->dsi_pll_status) & 0x2)
-			break;
-		udelay(1000);
-	}
-
-	if (!val)
-		puts("dsi cannot lock pll.\n");
-
-
-	writel(cfg2, &dsipll->dsi_pll_config2);
 
 }

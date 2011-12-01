@@ -153,7 +153,10 @@ struct venc_regs {
 
 #define DISPC_PCK_FREE_ENABLE			(1 << 27)
 
-/* Configure VENC DSS Params */
+/* Register DSS_CONTROL */
+#define DISPC_CLK_SWITCH			(1 << 0)
+#define DSI_CLK_SWITCH				(1 << 1)
+#define VENC_CLOCK_MODE				(1 << 2)
 #define VENC_CLK_ENABLE				(1 << 3)
 #define DAC_DEMEN				(1 << 4)
 #define DAC_POWERDN				(1 << 5)
@@ -163,6 +166,7 @@ struct venc_regs {
 						 DAC_DEMEN | \
 						 DAC_POWERDN | \
 						 VENC_OUT_SEL)
+
 /*
  * Panel Configuration
  */
