@@ -38,6 +38,7 @@
  * FIQ Stack: 00ebef7c
  */
 
+#define DEBUG
 #include <common.h>
 #include <command.h>
 #include <malloc.h>
