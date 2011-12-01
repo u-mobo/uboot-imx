@@ -61,8 +61,16 @@ struct dispc_regs {
 	u32 size_dig;				/* 0x78 */
 	u32 size_lcd;				/* 0x7C */
 	u32 gfx_base[2];
-	u32 gfx_position;
-	u32 gfx_size;
+	u32 gfx_position;			/* 0x88 */
+	u32 gfx_size;				/* 0x8C */
+	u32 reserved_3[4];			/* 0x90 */
+	u32 gfx_attributes;			/* 0xA0 */
+	u32 gfx_fifo_threshold;			/* 0xA4 */
+	u32 gfx_fifo_size_status;		/* 0xA8 */
+	u32 gfx_row_inc;			/* 0xAC */
+	u32 gfx_pixel_inc;			/* 0xB0 */
+	u32 gfx_window_skip;			/* 0xB4 */
+	u32 gfx_table_ba;			/* 0xB8 */
 	
 };
 
@@ -124,6 +132,7 @@ struct venc_regs {
 
 /* Few Register Offsets */
 #define FRAME_MODE_SHIFT			1
+#define FUNC_GATED_SHIFT			9
 #define TFTSTN_SHIFT				3
 #define DATALINES_SHIFT				8
 
@@ -136,11 +145,13 @@ struct venc_regs {
 #define GP_OUT1					(1 << 16)
 
 #define DISPC_ENABLE				(LCD_ENABLE | \
-						 DIG_ENABLE | \
+		/*				 DIG_ENABLE | */\ 
 						 GO_LCD | \
-						 GO_DIG | \
+		/*				 GO_DIG | */ \
 						 GP_OUT0| \
 						 GP_OUT1)
+
+#define DISPC_PCK_FREE_ENABLE			(1 << 27)
 
 /* Configure VENC DSS Params */
 #define VENC_CLK_ENABLE				(1 << 3)
