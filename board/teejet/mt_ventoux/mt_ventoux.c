@@ -49,18 +49,26 @@ static GraphicDevice panel;
 #define FPGA_INIT	119
 #define FPGA_DONE	154
 
+#define LCD_PWR		138
+#define LCD_PON_PIN	139
+
 #define XRES	480
 #define YRES	272
 
 static const struct panel_config lcd_cfg = {
-       .timing_h       = 0x01101d1b, /* Horizontal timing */
-       .timing_v       = 0x01400b02, /* Vertical timing */
-       .pol_freq       = 0x00023000, /* Pol Freq */
-       .divisor        = 0x0001000d, /* 33Mhz Pixel Clock */
-       .lcd_size       = ((YRES -1) << 16 | (XRES -1)),
-       .panel_type     = 0x01, /* TFT */
-       .data_lines     = 0x03, /* 24 Bit RGB */
-       .load_mode      = 0x02 /* Frame Mode */
+	.timing_h       =  ((4 /* hpb */ - 1) << 20) |
+			((8 /*hfp */- 1) << 8) |
+			(41 /* hsw */ - 1), /* Horizontal timing */
+	.timing_v       = (2 /*vbp */ << 24) |
+			(4 /* vfp */ << 8) | 
+			(10 - 1), /* Vertical timing */
+	.pol_freq       = 0x00000000, /* Pol Freq */
+	.divisor        = 0x0001000d, /* 33Mhz Pixel Clock */
+	.lcd_size       = ((YRES - 1) << 16 | (XRES - 1)),
+	.panel_type     = 0x01, /* TFT */
+	.data_lines     = 0x03, /* 24 Bit RGB */
+	.load_mode      = 0x02, /* Frame Mode */
+	.panel_color	= 0x00FF8000,
 };
 
 /* Timing definitions for FPGA */
@@ -260,14 +268,23 @@ void *video_hw_init(void)
 
 #if 1
 	size = XRES * YRES * lcd_cfg.data_lines;
+#if 0
 	fb = malloc(size);
 	if (!fb) {
 		printf("Frame buffer not allocated\n");
 		return NULL;
 	}
+#else
+	fb = (void *)0x80500000;
+#endif
 
 	printf("Frame buffer addres 0x%08p\n", fb);
  
+	gpio_request(LCD_PWR, "LCD Power");
+	gpio_request(LCD_PON_PIN, "LCD Pon");
+	gpio_direction_output(LCD_PWR, 0);
+	gpio_direction_output(LCD_PON_PIN, 1);
+
 	panel.winSizeX = XRES;
 	panel.winSizeY = YRES;
 	panel.plnSizeX = XRES;
@@ -275,13 +292,19 @@ void *video_hw_init(void)
 
 	panel.frameAdrs = (u32)fb;
 	panel.memSize = size;
+#if 1
+	panel.gdfBytesPP = 4;
+	panel.gdfIndex = GDF_32BIT_X888RGB;
+#else
+	panel.gdfBytesPP = 3;
+	panel.gdfIndex = GDF_24BIT_888RGB;
+#endif
 
-	panel.gdfBytesPP = 2;
-	panel.gdfIndex = GDF_16BIT_565RGB;
+	omap3_dss_pll(0x1c0d, 0x5600E); 
 
 	omap3_dss_panel_config(&lcd_cfg);
-	omap3_dss_enable();
 	omap3_dss_setfb(fb);
+	omap3_dss_enable();
 
 	printf("OMAP DSS set\n", fb);
 	return (void*)&panel;
