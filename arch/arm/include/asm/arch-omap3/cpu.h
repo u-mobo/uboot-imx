@@ -464,8 +464,6 @@ struct prcm {
 
 #define PRM_BASE		0x48306000
 
-#define CM_DSI_PLL		0x4804FF00
-
 #ifndef __KERNEL_STRICT_NAMES
 #ifndef __ASSEMBLY__
 struct prm {
@@ -527,18 +525,6 @@ struct pm {
 	u32 req_info_permission_1;	/* 0x68 */
 	u8 res6[0x14];
 	u32 addr_match_2;		/* 0x80 */
-};
-#endif /*__ASSEMBLY__ */
-#endif /* __KERNEL_STRICT_NAMES */
-
-#ifndef __KERNEL_STRICT_NAMES
-#ifndef __ASSEMBLY__
-struct dsi_pll {
-	u32 dsi_pll_control;
-	u32 dsi_pll_status;
-	u32 dsi_pll_go;
-	u32 dsi_pll_config1;
-	u32 dsi_pll_config2;
 };
 #endif /*__ASSEMBLY__ */
 #endif /* __KERNEL_STRICT_NAMES */
