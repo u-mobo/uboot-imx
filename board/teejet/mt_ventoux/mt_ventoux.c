@@ -68,7 +68,7 @@ static const struct panel_config lcd_cfg = {
 	.panel_type     = 0x01, /* TFT */
 	.data_lines     = 0x03, /* 24 Bit RGB */
 	.load_mode      = 0x02, /* Frame Mode */
-	.panel_color	= 0x00FF8000,
+	.panel_color	= 0,
 };
 
 /* Timing definitions for FPGA */
@@ -292,21 +292,13 @@ void *video_hw_init(void)
 
 	panel.frameAdrs = (u32)fb;
 	panel.memSize = size;
-#if 1
 	panel.gdfBytesPP = 4;
 	panel.gdfIndex = GDF_32BIT_X888RGB;
-#else
-	panel.gdfBytesPP = 3;
-	panel.gdfIndex = GDF_24BIT_888RGB;
-#endif
-
-	omap3_dss_pll(0x1c0d, 0x5600E); 
 
 	omap3_dss_panel_config(&lcd_cfg);
 	omap3_dss_setfb(fb);
 	omap3_dss_enable();
 
-	printf("OMAP DSS set\n", fb);
 	return (void*)&panel;
 #else
 	return NULL;
