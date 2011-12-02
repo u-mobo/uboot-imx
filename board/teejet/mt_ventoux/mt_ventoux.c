@@ -266,19 +266,21 @@ void *video_hw_init(void)
 	void *fb;
 	u32 size;
 
-#if 1
-	size = XRES * YRES * lcd_cfg.data_lines;
+	panel.gdfBytesPP = 4;
+	panel.gdfIndex = GDF_32BIT_X888RGB;
+	size = XRES * YRES * panel.gdfBytesPP * 2 + 1024;
 #if 0
 	fb = malloc(size);
 	if (!fb) {
 		printf("Frame buffer not allocated\n");
 		return NULL;
 	}
+	fb = ALIGN((unsigned long)fb, 1024);
 #else
 	fb = (void *)0x80500000;
 #endif
 
-	printf("Frame buffer addres 0x%08p\n", fb);
+	printf("Frame buffer address 0x%08p\n", fb);
  
 	gpio_request(LCD_PWR, "LCD Power");
 	gpio_request(LCD_PON_PIN, "LCD Pon");
@@ -292,17 +294,12 @@ void *video_hw_init(void)
 
 	panel.frameAdrs = (u32)fb;
 	panel.memSize = size;
-	panel.gdfBytesPP = 4;
-	panel.gdfIndex = GDF_32BIT_X888RGB;
 
 	omap3_dss_panel_config(&lcd_cfg);
 	omap3_dss_setfb(fb);
 	omap3_dss_enable();
 
 	return (void*)&panel;
-#else
-	return NULL;
-#endif
 }
 
 #endif
