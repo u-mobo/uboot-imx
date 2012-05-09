@@ -259,7 +259,7 @@
 		"ubi readvol ${loadaddr} kernel;"			\
 		"run addip addtty addmtd addfb addeth addmisc;"		\
 		"bootm ${loadaddr}\0"					\
-	"swupdate_args=setenv bootargs ubi.mtd=6 root=ubi0:recovery "	\
+	"swupdate_args=setenv bootargs ubi.mtd=6 root=ubi0:fs_recovery "\
 		"rootfstype=ubifs console=tty\0"			\
 	"swupdate=echo Running Sw-Update...;"				\
 		"if printenv mtdparts;then echo Starting SwUpdate...; "	\
