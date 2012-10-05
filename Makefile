@@ -3291,6 +3291,7 @@ mx53_smd_config		:unconfig
 	$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx53_smd freescale mx53
 
 mx53_loco_mfg_config		\
+mx53_loco_android_config	\
 mx53_loco_config	:unconfig
 	$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx53_loco freescale mx53
 
