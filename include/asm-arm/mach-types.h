@@ -3255,6 +3255,8 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_MX53_LOCO            3273
 #define MACH_TYPE_MX53_PCBA            3274
 #define MACH_TYPE_MX6Q_SABREAUTO	3529
+#define MACH_TYPE_MX53_UMOBO           3927
+#define MACH_TYPE_X1PLUS               4379
 
 #ifdef CONFIG_ARCH_EBSA110
 # ifdef machine_arch_type
