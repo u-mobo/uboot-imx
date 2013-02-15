@@ -317,6 +317,7 @@ static void setup_i2c(unsigned int module_base)
 #define BUCKPERI_RESTORE_SW_STEP	(0x55)
 /* restore VUSB 2V5 power supply after suspend */
 #define SUPPLY_RESTORE_VPERISW_EN	(0x20)
+#define DA9052_INTERFACE_REG		(19)
 #define DA9052_ID1213_REG		(35)
 #define DA9052_SUPPLY_REG		(60)
 #define SUPPLY_VBCORE_GO		(0x01)
@@ -328,13 +329,42 @@ static void setup_i2c(unsigned int module_base)
 void setup_pmic_voltages(void)
 {
 	uchar value;
+	int da9052_i2c_addr;
+	char* s;
+
+	s = getenv("da9052_i2c_addr");
+	da9052_i2c_addr = s ? (int)simple_strtol(s, NULL, 0) : DA9052_I2C_ADDR;
+	if (!(da9052_i2c_addr & 0x0008) ||	/* bit 3 to one */
+	     (da9052_i2c_addr & 0xff87)) {	/* only bits 3 to 6 non zero */
+		printf("invalid DA9052 address 0x%x!\n", da9052_i2c_addr);
+		da9052_i2c_addr = DA9052_I2C_ADDR;
+	}
 
 	i2c_init(CONFIG_SYS_I2C_SPEED, CONFIG_SYS_I2C_SLAVE);
 	if (i2c_probe(DA9052_I2C_ADDR)) {
-		printf("DA9052 probe failed!\n");
-		return;
+		printf("DA9052 standard address 0x%x probe failed!\n", DA9052_I2C_ADDR);
+		if (da9052_i2c_addr == DA9052_I2C_ADDR)
+			return;
+		if (i2c_probe(da9052_i2c_addr)) {
+			printf("DA9052 custom address 0x%x probe failed!\n", da9052_i2c_addr);
+			return;
+		} else {
+			printf("DA9052 custom address 0x%x probed successfully!\n", da9052_i2c_addr);
+		}
 	} else {
-		printf("DA9052 probed successfully!\n");
+		printf("DA9052 standard address 0x%x probed successfully!\n", DA9052_I2C_ADDR);
+		if (da9052_i2c_addr != DA9052_I2C_ADDR) {
+			i2c_read(DA9052_I2C_ADDR, DA9052_INTERFACE_REG, 1, &value, 1);
+			value &= 0x1f;
+			value |= ((da9052_i2c_addr & 0x0070) << 1);
+			i2c_write(DA9052_I2C_ADDR, DA9052_INTERFACE_REG, 1, &value, 1);
+			if (i2c_probe(da9052_i2c_addr)) {
+				printf("DA9052 custom address 0x%x probe failed!\n", da9052_i2c_addr);
+				return;
+			} else {
+				printf("DA9052 custom address 0x%x probed successfully!\n", da9052_i2c_addr);
+			}
+		}
 	}
 
 #ifdef CONFIG_CPU_1_2G
@@ -344,33 +374,33 @@ void setup_pmic_voltages(void)
 	/* increase VDDGP as 1.25V for 1GHZ */
 	value = 0x5e;
 #endif
-	i2c_write(DA9052_I2C_ADDR, DA9052_BUCKCORE_REG, 1, &value, 1);
+	i2c_write(da9052_i2c_addr, DA9052_BUCKCORE_REG, 1, &value, 1);
 
-	i2c_read(DA9052_I2C_ADDR, DA9052_SUPPLY_REG, 1, &value, 1);
+	i2c_read(da9052_i2c_addr, DA9052_SUPPLY_REG, 1, &value, 1);
 	value |= SUPPLY_VBCORE_GO;
-	i2c_write(DA9052_I2C_ADDR, DA9052_SUPPLY_REG, 1, &value, 1);
+	i2c_write(da9052_i2c_addr, DA9052_SUPPLY_REG, 1, &value, 1);
 
 	/* set VCC to 1.3V */
 	value = 0x60;
-	i2c_write(DA9052_I2C_ADDR, DA9052_BUCKPRO_REG, 1, &value, 1);
-	i2c_read(DA9052_I2C_ADDR, DA9052_SUPPLY_REG, 1, &value, 1);
+	i2c_write(da9052_i2c_addr, DA9052_BUCKPRO_REG, 1, &value, 1);
+	i2c_read(da9052_i2c_addr, DA9052_SUPPLY_REG, 1, &value, 1);
 	value |= SUPPLY_VBPRO_GO;
-	i2c_write(DA9052_I2C_ADDR, DA9052_SUPPLY_REG, 1, &value, 1);
+	i2c_write(da9052_i2c_addr, DA9052_SUPPLY_REG, 1, &value, 1);
 
 	/* restore VUSB_2V5 when reset from suspend state */
 	value = BUCKPERI_RESTORE_SW_STEP;
-	i2c_write(DA9052_I2C_ADDR, DA9052_ID1213_REG, 1, &value, 1);
-	i2c_read(DA9052_I2C_ADDR, DA9052_SUPPLY_REG, 1, &value, 1);
+	i2c_write(da9052_i2c_addr, DA9052_ID1213_REG, 1, &value, 1);
+	i2c_read(da9052_i2c_addr, DA9052_SUPPLY_REG, 1, &value, 1);
 	value |= SUPPLY_RESTORE_VPERISW_EN;
-	i2c_write(DA9052_I2C_ADDR, DA9052_SUPPLY_REG, 1, &value, 1);
+	i2c_write(da9052_i2c_addr, DA9052_SUPPLY_REG, 1, &value, 1);
 
 	/* set LDO6 to 3.3V for VDDIO_3V3_EXT */
 	value = 0x6a;
-	i2c_write(DA9052_I2C_ADDR, DA9052_LDO6_REG, 1, &value, 1);
+	i2c_write(da9052_i2c_addr, DA9052_LDO6_REG, 1, &value, 1);
 
 	/* set LDO9 to 3.3V for VDDIO_FEC */
 	value = 0x69;
-	i2c_write(DA9052_I2C_ADDR, DA9052_LDO9_REG, 1, &value, 1);
+	i2c_write(da9052_i2c_addr, DA9052_LDO9_REG, 1, &value, 1);
 }
 #endif
 

@@ -162,15 +162,18 @@
 		"bootfile=uImage\0"	\
 		"loadaddr=0x70800000\0"				\
 		"rd_loadaddr=0x70D00000\0"		\
+		"da9052_i2c_addr=0x58\0"	\
 		"vga=setenv display di1_primary video=mxcdi1fb:GBR24,VGA-XGA vga\0" \
 		"lcd=setenv display di0_primary calibration\0" \
 		"hdmi_720p=setenv display di0_primary video=mxcdi0fb:RGB24,1280x720M@60 hdmi\0"	\
 		"hdmi_1080p=setenv display di0_primary video=mxcdi0fb:RGB24,1080P60 hdmi\0"	\
 		"claa_lcd=setenv display di0_primary video=mxcdi0fb:RGB565,CLAA-WVGA calibration\0" \
-		"set_display=run lcd\0"			\
+		"samsung_lcd=setenv display di0_primary video=mxcdi0fb:RGB24,SAMSUNG-LMS700\0" \
+		"set_display=run samsung_lcd\0"		\
+		"flags=quiet lpj=4997120\0" \
 		"preboot=mmc read 0 ${loadaddr} 0x400 0x400; bmp display ${loadaddr}\0"	\
-		"bootargs_base=setenv bootargs console=ttymxc3,115200 "\
-			"init=/init androidboot.console=ttymxc3 ${display} gpu_nommu\0"		\
+		"bootargs_base=setenv bootargs console=ttymxc3,115200 da9052_i2c_addr=${da9052_i2c_addr}" \
+			"init=/init androidboot.console=ttymxc3 ${display} gpu_nommu ${flags}\0" \
 		"bootcmd_SD=mmc dev 0;"		\
 			"mmc read ${loadaddr} 0x800 0x2000;" \
 			"mmc read ${rd_loadaddr} 0x3000 0x300\0" \
