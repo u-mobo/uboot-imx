@@ -172,7 +172,7 @@
 		"set_display=run samsung_lcd\0"		\
 		"flags=quiet lpj=4997120\0" \
 		"preboot=mmc read 0 ${loadaddr} 0x400 0x400; bmp display ${loadaddr}\0"	\
-		"bootargs_base=setenv bootargs console=ttymxc3,115200 da9052_i2c_addr=${da9052_i2c_addr}" \
+		"bootargs_base=setenv bootargs console=ttymxc3,115200 da9052_i2c_addr=${da9052_i2c_addr} " \
 			"init=/init androidboot.console=ttymxc3 ${display} gpu_nommu ${flags}\0" \
 		"bootcmd_SD=mmc dev 0;"		\
 			"mmc read ${loadaddr} 0x800 0x2000;" \
