@@ -3306,6 +3306,11 @@ mx53_evk_mfg_config             \
 mx53_evk_config      : unconfig
 	@$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx53_evk freescale mx53
 
+mx53_umobo_mfg_config		\
+mx53_umobo_android_config	\
+mx53_umobo_config	:unconfig
+	$(MKCONFIG) $(@:_config=) arm arm_cortexa8 mx53_umobo freescale mx53
+
 mx6dl_arm2_config		\
 mx6dl_arm2_iram_config		\
 mx6dl_arm2_mfg_config		\
