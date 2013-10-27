@@ -122,25 +122,54 @@
 #define CONFIG_LOADADDR		0x70800000	/* loadaddr env var */
 #define CONFIG_RD_LOADADDR	(CONFIG_LOADADDR + 0x300000)
 
-#define	CONFIG_EXTRA_ENV_SETTINGS					\
-		"netdev=eth0\0"						\
-		"ethprime=FEC0\0"					\
-		"uboot=u-boot.bin\0"			\
-		"kernel=uImage\0"				\
-		"nfsroot=/opt/eldk/arm\0"				\
-		"bootargs_base=setenv bootargs console=ttymxc3,115200\0"\
-		"bootargs_nfs=setenv bootargs ${bootargs} root=/dev/nfs "\
-			"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0"\
-		"bootcmd_net=run bootargs_base bootargs_nfs; "		\
-			"tftpboot ${loadaddr} ${kernel}; bootm\0"	\
-		"bootargs_mmc=setenv bootargs ${bootargs} ip=dhcp "	\
-			"root=/dev/mmcblk0p1 rootwait rw\0"		\
-		"bootcmd_mmc=run bootargs_base bootargs_mmc; "		\
-		"mmc dev 0; "	\
-		"mmc read ${loadaddr} 0x800 0x1800; bootm\0"	\
-		"bootcmd=run bootcmd_mmc\0"	\
-	\
+#define CONFIG_EXTRA_ENV_SETTINGS \
+	"da9052_i2c_addr=0x58\0"	\
+	"script=boot.scr\0" \
+	"uimage=uImage\0" \
+	"mmcdev=0\0" \
+	"mmcpart=2\0" \
+	"mmcroot=/dev/mmcblk0p3 rw\0" \
+	"mmcrootfstype=ext3 rootwait\0" \
+	"mmcargs=setenv bootargs console=ttymxc3,${baudrate} " \
+		"root=${mmcroot} " \
+		"rootfstype=${mmcrootfstype}\0" \
+	"loadbootscript=" \
+		"fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};\0" \
+	"bootscript=echo Running bootscript from mmc ...; " \
+		"source\0" \
+	"loaduimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${uimage}\0" \
+	"mmcboot=echo Booting from mmc ...; " \
+		"run mmcargs; " \
+		"bootm\0" \
+	"pxeboot=echo Booting from net via PXE ...; " \
+		"setenv autoload no; " \
+		" bootp; " \
+		"if pxe get; then " \
+			"pxe boot;" \
+		"fi;\0" \
+	"netargs=setenv bootargs console=ttymxc3,${baudrate} " \
+		"root=/dev/nfs " \
+		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
+	"netboot=echo Booting from net ...; " \
+		"run netargs; " \
+		"dhcp ${uimage}; bootm\0" \
+	"kernel_addr_r=0x88000000\0" \
+	"ramdisk_addr_r=0x81600000\0" \
+	"pxefile_addr_r=0x86000000\0"
 
+#define CONFIG_BOOTCOMMAND \
+	"if mmc rescan ${mmcdev}; then " \
+		"if run loadbootscript; then " \
+			"run bootscript; " \
+		"else " \
+			"if run loaduimage; then " \
+				"run mmcboot; " \
+			"else run netboot; " \
+			"fi; " \
+		"fi; " \
+	"fi; " \
+	"run pxeboot; " \
+	"run netboot; "
 
 #define CONFIG_ARP_TIMEOUT	200UL
 
@@ -148,6 +177,8 @@
  * Miscellaneous configurable options
  */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
+#define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser */
+#define CONFIG_SYS_PROMPT_HUSH_PS2	"> "
 #define CONFIG_SYS_PROMPT		"MX53-UMoBo U-Boot > "
 #define CONFIG_AUTO_COMPLETE
 #define CONFIG_SYS_CBSIZE		256	/* Console I/O Buffer Size */
@@ -199,6 +230,7 @@
 	#define CONFIG_SYS_I2C_PORT             I2C1_BASE_ADDR
 	#define CONFIG_SYS_I2C_SPEED            100000
 	#define CONFIG_SYS_I2C_SLAVE            0xfe
+	#define CONFIG_UMOBO_BOARD	1
 #endif
 
 /*
@@ -298,6 +330,7 @@
 	#define CONFIG_ENV_IS_NOWHERE	1
 #endif
 
+#undef CONFIG_SPLASH_SCREEN
 #ifdef CONFIG_SPLASH_SCREEN
 	/*
 	 * Framebuffer and LCD
