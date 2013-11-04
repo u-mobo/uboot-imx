@@ -123,12 +123,13 @@
 #define CONFIG_RD_LOADADDR	(CONFIG_LOADADDR + 0x300000)
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"da9052_i2c_addr=0x58\0"	\
+	"da9052_i2c_addr=0x58\0" \
+	"ethaddr=00:04:9f:00:ea:d3\0" \
 	"script=boot.scr\0" \
 	"uimage=uImage\0" \
 	"mmcdev=0\0" \
-	"mmcpart=2\0" \
-	"mmcroot=/dev/mmcblk0p3 rw\0" \
+	"mmcpart=1\0" \
+	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"mmcrootfstype=ext3 rootwait\0" \
 	"mmcargs=setenv bootargs console=ttymxc3,${baudrate} " \
 		"root=${mmcroot} " \
