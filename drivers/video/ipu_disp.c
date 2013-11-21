@@ -6,7 +6,7 @@
  *
  * Linux IPU driver
  *
- * (C) Copyright 2005-2011 Freescale Semiconductor, Inc.
+ * (C) Copyright 2005-2013 Freescale Semiconductor, Inc.
  *
  * See file CREDITS for list of people who contributed to this
  * project.
@@ -51,6 +51,7 @@ struct dp_csc_param_t {
 };
 
 #define SYNC_WAVE 0
+#define NULL_WAVE (-1)
 
 /* DC display ID assignments */
 #define DC_DISP_ID_SYNC(di)	(di)
@@ -272,22 +273,34 @@ static void ipu_dc_map_clear(int map)
 }
 
 static void ipu_dc_write_tmpl(int word, u32 opcode, u32 operand, int map,
-			       int wave, int glue, int sync)
+			       int wave, int glue, int sync, int stop)
 {
 	u32 reg;
-	int stop = 1;
 
-	reg = sync;
-	reg |= (glue << 4);
-	reg |= (++wave << 11);
-	reg |= (++map << 15);
-	reg |= (operand << 20) & 0xFFF00000;
-	__raw_writel(reg, ipu_dc_tmpl_reg + word * 2);
+	if (opcode == WRG) {
+		reg = sync;
+		reg |= (glue << 4);
+		reg |= (++wave << 11);
+		reg |= ((operand & 0x1FFFF) << 15);
+		__raw_writel(reg, ipu_dc_tmpl_reg + word * 2);
 
-	reg = (operand >> 12);
-	reg |= opcode << 4;
-	reg |= (stop << 9);
-	__raw_writel(reg, ipu_dc_tmpl_reg + word * 2 + 1);
+		reg = (operand >> 17);
+		reg |= opcode << 7;
+		reg |= (stop << 9);
+		__raw_writel(reg, ipu_dc_tmpl_reg + word * 2 + 1);
+	} else {
+		reg = sync;
+		reg |= (glue << 4);
+		reg |= (++wave << 11);
+		reg |= (++map << 15);
+		reg |= (operand << 20) & 0xFFF00000;
+		__raw_writel(reg, ipu_dc_tmpl_reg + word * 2);
+
+		reg = (operand >> 12);
+		reg |= opcode << 4;
+		reg |= (stop << 9);
+		__raw_writel(reg, ipu_dc_tmpl_reg + word * 2 + 1);
+	}
 }
 
 static void ipu_dc_link_event(int chan, int event, int addr, int priority)
@@ -555,12 +568,12 @@ void ipu_dc_init(int dc_chan, int di, unsigned char interlaced)
 				ipu_dc_link_event(dc_chan, DC_EVT_NL, 2, 3);
 				ipu_dc_link_event(dc_chan, DC_EVT_EOL, 3, 2);
 				ipu_dc_link_event(dc_chan, DC_EVT_NEW_DATA,
-					4, 1);
+					1, 1);
 			} else {
 				ipu_dc_link_event(dc_chan, DC_EVT_NL, 5, 3);
 				ipu_dc_link_event(dc_chan, DC_EVT_EOL, 6, 2);
 				ipu_dc_link_event(dc_chan, DC_EVT_NEW_DATA,
-					7, 1);
+					12, 1);
 			}
 		}
 		ipu_dc_link_event(dc_chan, DC_EVT_NF, 0, 0);
@@ -1195,13 +1208,15 @@ int32_t ipu_init_sync_panel(int disp, uint32_t pixel_clk,
 
 		/* Init template microcode */
 		if (disp) {
-		   ipu_dc_write_tmpl(2, WROD(0), 0, map, SYNC_WAVE, 8, 5);
-		   ipu_dc_write_tmpl(3, WROD(0), 0, map, SYNC_WAVE, 4, 5);
-		   ipu_dc_write_tmpl(4, WROD(0), 0, map, SYNC_WAVE, 0, 5);
+		   ipu_dc_write_tmpl(2, WROD(0), 0, map, SYNC_WAVE, 8, 5, 1);
+		   ipu_dc_write_tmpl(3, WROD(0), 0, map, SYNC_WAVE, 4, 5, 0);
+		   ipu_dc_write_tmpl(4, WRG,     0, map, NULL_WAVE, 0, 0, 1);
+		   ipu_dc_write_tmpl(1, WROD(0), 0, map, SYNC_WAVE, 0, 5, 1);
 		} else {
-		   ipu_dc_write_tmpl(5, WROD(0), 0, map, SYNC_WAVE, 8, 5);
-		   ipu_dc_write_tmpl(6, WROD(0), 0, map, SYNC_WAVE, 4, 5);
-		   ipu_dc_write_tmpl(7, WROD(0), 0, map, SYNC_WAVE, 0, 5);
+		   ipu_dc_write_tmpl(5,  WROD(0), 0, map, SYNC_WAVE, 8, 5, 1);
+		   ipu_dc_write_tmpl(6,  WROD(0), 0, map, SYNC_WAVE, 4, 5, 0);
+		   ipu_dc_write_tmpl(7,  WRG,     0, map, NULL_WAVE, 0, 0, 1);
+		   ipu_dc_write_tmpl(12, WROD(0), 0, map, SYNC_WAVE, 0, 5, 1);
 		}
 
 		if (sig.Hsync_pol)

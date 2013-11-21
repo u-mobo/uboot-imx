@@ -892,11 +892,11 @@ static inline int read_cpu_temperature(void)
 	hot_temp = fuse & 0xff;
 
 	/*
-	 * Only when it is i.MX6Q and high temperature calibration
+	 * Only when high temperature calibration
 	 * data not used, we use universal equation to get thermal
 	 * sensor's ratio.
 	 */
-#if (!defined(CONFIG_MX6SL) && !defined(USE_CALIBRATION))
+#ifndef USE_CALIBRATION
 	/*
 	 * The universal equation for thermal sensor
 	 * is slope = 0.4297157 - (0.0015976 * 25C fuse),
@@ -1035,6 +1035,9 @@ int cpu_eth_init(bd_t *bis)
 int arch_cpu_init(void)
 {
 	int val;
+
+	/* Clear MMDC channel mask */
+	writel(0, CCM_BASE_ADDR + 0x4);
 
 	/* Due to hardware limitation, on MX6Q we need to gate/ungate all PFDs
 	 * to make sure PFD is working right, otherwise, PFDs may
@@ -1448,57 +1451,55 @@ uint32_t authenticate_image(uint32_t ddr_start, uint32_t image_size)
 	int result = 0;
 	ulong start;
 
-	if (check_hab_enable() == 1) {
-		printf("\nAuthenticate uImage from DDR location 0x%lx...\n",
-			ddr_start);
+	printf("\nAuthenticate uImage from DDR location 0x%lx...\n", ddr_start);
 
-		hab_caam_clock_enable();
+	hab_caam_clock_enable();
 
-		if (hab_rvt_entry() == HAB_SUCCESS) {
+	if (hab_rvt_entry() == HAB_SUCCESS) {
 
-			/* If not already aligned, Align to ALIGN_SIZE */
-			if (image_size % ALIGN_SIZE)
-				ivt_offset = image_size - image_size %
+		/* If not already aligned, Align to ALIGN_SIZE */
+		if (image_size % ALIGN_SIZE)
+			ivt_offset = image_size - image_size %
 					ALIGN_SIZE + ALIGN_SIZE;
-			else
-				ivt_offset = image_size;
+		else
+			ivt_offset = image_size;
 
-			start = ddr_start;
-			bytes = ivt_offset + IVT_SIZE + CSF_PAD_SIZE;
+		start = ddr_start;
+		bytes = ivt_offset + IVT_SIZE + CSF_PAD_SIZE;
 
 #ifdef DEBUG_AUTHENTICATE_IMAGE
-			printf("\nivt_offset = 0x%x, ivt addr = 0x%x\n",
-			       ivt_offset, ddr_start + ivt_offset);
-			printf("Dumping IVT\n");
-			dump_mem(ddr_start + ivt_offset, 0x20);
+		printf("\nivt_offset = 0x%x, ivt addr = 0x%x\n",
+		       ivt_offset, ddr_start + ivt_offset);
+		printf("Dumping IVT\n");
+		dump_mem(ddr_start + ivt_offset, 0x20);
 
-			printf("Dumping CSF Header\n");
-			dump_mem(ddr_start + ivt_offset + 0x20, 0x40);
+		printf("Dumping CSF Header\n");
+		dump_mem(ddr_start + ivt_offset + 0x20, 0x40);
 
-			get_hab_status();
+		get_hab_status();
 
-			printf("\nCalling authenticate_image in ROM\n");
-			printf("\tivt_offset = 0x%x\n\tstart = 0x%08x"
-			       "\n\tbytes = 0x%x\n", ivt_offset, start, bytes);
+		printf("\nCalling authenticate_image in ROM\n");
+		printf("\tivt_offset = 0x%x\n\tstart = 0x%08x"
+		       "\n\tbytes = 0x%x\n", ivt_offset, start, bytes);
 #endif
 
-			load_addr = (uint32_t)hab_rvt_authenticate_image(
+		load_addr = (uint32_t)hab_rvt_authenticate_image(
 					HAB_CID_UBOOT,
 					ivt_offset, (void **)&start,
 					(size_t *)&bytes, NULL);
-			if (hab_rvt_exit() != HAB_SUCCESS) {
-				printf("hab exit function fail\n");
-				load_addr = 0;
-			}
-		} else
-			printf("hab entry function fail\n");
+		if (hab_rvt_exit() != HAB_SUCCESS) {
+			printf("hab exit function fail\n");
+			load_addr = 0;
+		}
+	} else
+		printf("hab entry function fail\n");
 
-		hab_caam_clock_disable();
+	hab_caam_clock_disable();
 
-		get_hab_status();
-	}
+	get_hab_status();
 
-	if ((!check_hab_enable()) || (load_addr != 0))
+
+	if (load_addr != 0)
 		result = 1;
 
 	return result;
@@ -1508,6 +1509,9 @@ uint32_t authenticate_image(uint32_t ddr_start, uint32_t image_size)
 
 
 #ifdef CONFIG_ANDROID_RECOVERY
+#ifndef CONFIG_ANDROID_RECOVERY_BOOTCMD_SD
+#define CONFIG_ANDROID_RECOVERY_BOOTCMD_SD CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC
+#endif
 struct reco_envs supported_reco_envs[BOOT_DEV_NUM] = {
 	{
 		.cmd = CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC,
@@ -1534,7 +1538,7 @@ struct reco_envs supported_reco_envs[BOOT_DEV_NUM] = {
 		.args = CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC,
 	},
 	{
-		.cmd = CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC,
+		.cmd = CONFIG_ANDROID_RECOVERY_BOOTCMD_SD,
 		.args = CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC,
 	},
 	{

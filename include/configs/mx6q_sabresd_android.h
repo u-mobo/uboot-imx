@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Freescale Semiconductor, Inc.
+ * Copyright (C) 2012-2013 Freescale Semiconductor, Inc.
  *
  * Configuration settings for the MX6Q Sabre Lite2 Freescale board.
  *
@@ -56,6 +56,8 @@
 #define CONFIG_ANDROID_RECOVERY_BOOTARGS_MMC NULL
 #define CONFIG_ANDROID_RECOVERY_BOOTCMD_MMC  \
 	"booti mmc3 recovery"
+#define CONFIG_ANDROID_RECOVERY_BOOTCMD_SD  \
+	"booti mmc2 recovery"
 #define CONFIG_ANDROID_RECOVERY_CMD_FILE "/recovery/command"
 #define CONFIG_INITRD_TAG
 
@@ -71,8 +73,6 @@
 #define	CONFIG_EXTRA_ENV_SETTINGS					\
 		"netdev=eth0\0"						\
 		"ethprime=FEC0\0"					\
-		"fastboot_dev=mmc3\0"					\
-		"bootcmd=booti mmc3\0"					\
 		"splashimage=0x30000000\0"				\
 		"splashpos=m,m\0"					\
 		"lvds_num=1\0"

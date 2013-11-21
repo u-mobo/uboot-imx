@@ -3330,6 +3330,7 @@ mx6q_arm2_iram_config	: unconfig
 
 mx6solo_sabresd_config			\
 mx6solo_sabresd_mfg_config		\
+mx6solo_sabresd_android_config             \
 mx6dl_sabresd_config			\
 mx6dl_sabresd_mfg_config		\
 mx6dl_sabresd_android_config			\
