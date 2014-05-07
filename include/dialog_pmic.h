@@ -155,6 +155,7 @@ enum {
 };
 
 #define DA_BUCKCORE_VBCORE_1_250V		0x1E
+#define DA_BUCKCORE_VBCORE_1_300V		0x20
 
 /* BUCKCORE REGISTER */
 #define DA9052_BUCKCORE_BCORECONF               (1 << 7)
