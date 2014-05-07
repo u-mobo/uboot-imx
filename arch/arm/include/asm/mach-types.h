@@ -1107,6 +1107,19 @@ extern unsigned int __machine_arch_type;
 #define MACH_TYPE_ARMADILLO_800EVA     3863
 #define MACH_TYPE_KZM9G                4140
 #define MACH_TYPE_BLUELIGHTNING        3927
+#define MACH_TYPE_SILVERBULLET         4887
+
+#ifdef CONFIG_ARCH_SILVERBULLET
+# ifdef machine_arch_type
+#  undef machine_arch_type
+#  define machine_arch_type	__machine_arch_type
+# else
+#  define machine_arch_type	MACH_TYPE_SILVERBULLET
+# endif
+# define machine_is_silverbullet()	(machine_arch_type == MACH_TYPE_SILVERBULLET)
+#else
+# define machine_is_silverbullet()	(0)
+#endif
 
 #ifdef CONFIG_ARCH_BLUELIGHTNING
 # ifdef machine_arch_type
