@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
+obj-$(CONFIG_POWER_ID95APM) += pmic_id95apm.o
 obj-$(CONFIG_POWER_MAX8998) += pmic_max8998.o
 obj-$(CONFIG_POWER_MAX8997) += pmic_max8997.o
 obj-$(CONFIG_POWER_MUIC_MAX8997) += muic_max8997.o
