@@ -2,7 +2,7 @@
  * Copyright 2007, Freescale Semiconductor, Inc
  * Andy Fleming
  *
- * Copyright (C) 2008-2011 Freescale Semiconductor, Inc.
+ * Copyright (C) 2008-2014 Freescale Semiconductor, Inc.
  *
  * Based vaguely on the pxa mmc code:
  * (C) Copyright 2003
@@ -233,6 +233,12 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 
 	/* Reset CMD and DATA portions on error */
 	if (irqstat & (CMD_ERR | IRQSTAT_CTOE)) {
+
+		if (SD_CMD_TUNING == cmd->cmdidx) {
+			/*add delay to output tunning block from card*/
+			udelay(50);
+		}
+
 		writel(readl(&regs->sysctl) | SYSCTL_RSTC, &regs->sysctl);
 		while (readl(&regs->sysctl) & SYSCTL_RSTC)
 			;
@@ -252,6 +258,14 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 		if (cmd->cmdidx == SD_CMD_SWITCH_UHS18V)
 			printf("CMD11 to switch to 1.8V mode failed."
 				"Card requires power cycle\n");
+
+		/* Clear the tune execute bit*/
+		mixctrl = readl(&regs->mixctrl);
+		if (mixctrl & USDHC_MIXCTRL_EXE_TUNE) {
+			mixctrl &= ~USDHC_MIXCTRL_EXE_TUNE;
+			writel(mixctrl, &regs->mixctrl);
+		}
+
 	}
 
 	if (irqstat & CMD_ERR)
@@ -328,8 +342,12 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 			tmp_ptr = (u32 *)data->dest;
 
 			for (i = 0; i < (block_cnt); ++i) {
-				while (!(readl(&regs->irqstat) & IRQSTAT_BRR)) 
-					;
+				while (!(readl(&regs->irqstat) & IRQSTAT_BRR)) {
+					/*Check data error to avoid dead loop*/
+					if (readl(&regs->irqstat) & DATA_ERR) {
+						goto send_end;
+					}
+				}
 
 				for (j = 0; j < (block_size >> 2); ++j, ++tmp_ptr) {
 					*tmp_ptr = readl(&regs->datport);
@@ -342,8 +360,12 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 			tmp_ptr = (u32 *)data->src;
 
 			for (i = 0; i < (block_cnt); ++i) {
-				while (!(readl(&regs->irqstat) & IRQSTAT_BWR))
-					;
+				while (!(readl(&regs->irqstat) & IRQSTAT_BWR)) {
+					/*Check timeout error to avoid dead loop*/
+					if (readl(&regs->irqstat) & IRQSTAT_DTOE) {
+						goto send_end;
+					}
+				}
 
 				for (j = 0; j < (block_size >> 2); ++j, ++tmp_ptr) {
 					writel(*tmp_ptr, &regs->datport);
@@ -355,6 +377,15 @@ esdhc_send_cmd(struct mmc *mmc, struct mmc_cmd *cmd, struct mmc_data *data)
 		}
 
 		while (!(readl(&regs->irqstat) & IRQSTAT_TC)) ;
+	}
+
+send_end:
+
+	/* Clear the tune execute bit*/
+	mixctrl = readl(&regs->mixctrl);
+	if (mixctrl & USDHC_MIXCTRL_EXE_TUNE) {
+		mixctrl &= ~USDHC_MIXCTRL_EXE_TUNE;
+		writel(mixctrl, &regs->mixctrl);
 	}
 
 	/* Reset CMD and DATA portions of the controller on error */
@@ -506,11 +537,26 @@ static void esdhc_dll_setup(struct mmc *mmc)
 	}
 }
 
+/*
+ * CPU and board-specific Ethernet initializations.  Aliased function
+ * signals caller to move on
+ */
+static int __def_mmc_io_switch(u32 index, u32 clock)
+{
+	return -1;
+}
+
+int board_mmc_io_switch(u32 index, u32 clock)
+	__attribute__((weak, alias("__def_mmc_io_switch")));
+
 static void esdhc_set_ios(struct mmc *mmc)
 {
 	struct fsl_esdhc_cfg *cfg = (struct fsl_esdhc_cfg *)mmc->priv;
 	struct fsl_esdhc *regs = (struct fsl_esdhc *)cfg->esdhc_base;
 	u32 tmp;
+
+	/* Set the io pad*/
+	board_mmc_io_switch(mmc->block_dev.dev, mmc->clock);
 
 	/* Set the clock speed */
 	set_sysctl(mmc, mmc->clock);
