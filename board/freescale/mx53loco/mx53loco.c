@@ -234,7 +234,7 @@ static int power_init(void)
 	struct pmic *p;
 
 	if (!i2c_probe(CONFIG_SYS_DIALOG_PMIC_I2C_ADDR)) {
-		ret = pmic_dialog_init(I2C_PMIC);
+		ret = pmic_dialog_init(I2C_PMIC, CONFIG_SYS_DIALOG_PMIC_I2C_ADDR);
 		if (ret)
 			return ret;
 

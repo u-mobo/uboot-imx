@@ -10,7 +10,7 @@
 #include <dialog_pmic.h>
 #include <errno.h>
 
-int pmic_dialog_init(unsigned char bus)
+int pmic_dialog_init(unsigned char bus, unsigned char i2c_addr)
 {
 	static const char name[] = "DIALOG_PMIC";
 	struct pmic *p = pmic_alloc();
@@ -24,7 +24,7 @@ int pmic_dialog_init(unsigned char bus)
 	p->number_of_regs = DIALOG_NUM_OF_REGS;
 
 	p->interface = PMIC_I2C;
-	p->hw.i2c.addr = CONFIG_SYS_DIALOG_PMIC_I2C_ADDR;
+	p->hw.i2c.addr = i2c_addr;
 	p->hw.i2c.tx_num = 1;
 	p->bus = bus;
 

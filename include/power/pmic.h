@@ -74,7 +74,7 @@ struct pmic {
 };
 
 int pmic_init(unsigned char bus);
-int pmic_dialog_init(unsigned char bus);
+int pmic_dialog_init(unsigned char bus, unsigned char i2c_addr);
 int check_reg(struct pmic *p, u32 reg);
 struct pmic *pmic_alloc(void);
 struct pmic *pmic_get(const char *s);
