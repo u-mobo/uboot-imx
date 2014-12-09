@@ -321,6 +321,10 @@ static int mx6_rgmii_rework(struct phy_device *phydev)
 	ksz9031_phy_extended_write(phydev, 0x02,
 				   MII_KSZ9031_EXT_RGMII_RX_DATA_SKEW,
 				   MII_KSZ9031_MOD_DATA_NO_POST_INC, 0x0000);
+	/* tx data pad skew - devaddr = 0x02, register = 0x05 */
+        ksz9031_phy_extended_write(phydev, 0x02,
+				   MII_KSZ9031_EXT_RGMII_TX_DATA_SKEW,
+				   MII_KSZ9031_MOD_DATA_NO_POST_INC, 0x0000);
 	/* tx and rx clock pad skew - devaddr = 0x02, register = 0x08 */
 	ksz9031_phy_extended_write(phydev, 0x02,
 				   MII_KSZ9031_EXT_RGMII_CLOCK_SKEW,
@@ -331,8 +335,16 @@ static int mx6_rgmii_rework(struct phy_device *phydev)
 int board_phy_config(struct phy_device *phydev)
 {
 	mx6_rgmii_rework(phydev);
+
 	if (phydev->drv->config)
 		phydev->drv->config(phydev);
+
+	/* 
+	 * Bug: Apparently U-MoBo does not work with Gigabit switches...
+	 * Limiting speed to 10/100Mbps, and setting master mode, seems to 
+	 * be the only way to have a successfull PHY auto negotiation.
+	 */
+	phy_write(phydev, 0x07, MII_CTRL1000, 0x1c00);
 
 	return 0;
 }
